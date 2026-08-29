@@ -1,4 +1,4 @@
-# WSF Semantic Engine — Software Foundation
+# WSF Semantic Engine : Software Foundation
 
 > **The deployable software implementation of WSF semantics.**
 
@@ -108,10 +108,10 @@ Multiple API styles:
 ## Deployment Considerations
 
 The engine is designed to be:
-- **Stateless where possible** — for horizontal scaling
-- **Stateful where necessary** — for transactions and reasoning
-- **Cloud-native** — container-ready, orchestration-friendly
-- **On-premise compatible** — for sensitive deployments
+- **Stateless where possible** : for horizontal scaling
+- **Stateful where necessary** : for transactions and reasoning
+- **Cloud-native** : container-ready, orchestration-friendly
+- **On-premise compatible** : for sensitive deployments
 
 Specific deployment strategies (Kubernetes, Docker Swarm, etc.) will be selected through subsequent ADRs.
 
@@ -119,16 +119,16 @@ Specific deployment strategies (Kubernetes, Docker Swarm, etc.) will be selected
 
 ## Status
 
-This repository is being established per CR-WSF-17 Rev.1. **No code has been written yet.** The architecture is documented; the implementation awaits subsequent ADRs (ADR-WSF-24 — WSF Software Architecture).
+This repository is being established per CR-WSF-17 Rev.1. **No code has been written yet.** The architecture is documented; the implementation awaits subsequent ADRs (ADR-WSF-24 ; WSF Software Architecture).
 
 ---
 
 ## Related Repositories
 
-- [wsf/](../wsf/) — Canonical semantic assets
-- [wsf-spec/](../wsf-spec/) — Normative specifications
-- [wsf-governance/](../wsf-governance/) — ADRs, CRs
-- [wsf-connectors/](../wsf-connectors/) — Integration adapters
+- [wsf/](../wsf/) : Canonical semantic assets
+- [wsf-spec/](../wsf-spec/) : Normative specifications
+- [wsf-governance/](../wsf-governance/) : ADRs, CRs
+- [wsf-connectors/](../wsf-connectors/) : Integration adapters
 
 ---
 
