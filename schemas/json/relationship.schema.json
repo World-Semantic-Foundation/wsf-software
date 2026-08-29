@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://world-semantic-foundation.org/schemas/relationship.schema.json",
+  "title": "WSF Relationship",
+  "description": "Schema for a WSF Relationship per ADR-WSF-19. Typed association between concepts or entities.",
+  "type": "object",
+  "required": ["semantic_id", "type", "subject", "object", "provenance"],
+  "additionalProperties": false,
+  "properties": {
+    "semantic_id": {
+      "description": "Stable CURIE-form identifier of the relationship instance",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "type": {
+      "description": "Relationship type per ADR-WSF-19",
+      "type": "string",
+      "enum": [
+        "specialises",
+        "generalises",
+        "references",
+        "depends_on",
+        "part_of",
+        "has_part",
+        "instantiates",
+        "instance_of",
+        "relates",
+        "asserts",
+        "evidenced_by",
+        "governed_by"
+      ]
+    },
+    "subject": {
+      "description": "Source concept or entity semantic_id",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "object": {
+      "description": "Target concept or entity semantic_id",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "context": {
+      "description": "Context qualifier (temporal, role, etc.)",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "cardinality": {
+      "description": "Cardinality constraint",
+      "type": "object",
+      "properties": {
+        "min": { "type": "integer", "minimum": 0 },
+        "max": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "attributes": {
+      "description": "Optional relationship attributes",
+      "type": "object",
+      "additionalProperties": true
+    },
+    "provenance": {
+      "$ref": "https://world-semantic-foundation.org/schemas/provenance.schema.json"
+    },
+    "validity": {
+      "$ref": "https://world-semantic-foundation.org/schemas/validity.schema.json"
+    }
+  }
+}

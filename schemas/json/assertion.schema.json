@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://world-semantic-foundation.org/schemas/assertion.schema.json",
+  "title": "WSF Assertion",
+  "description": "Schema for a WSF Assertion per ADR-WSF-22. Claim about a relationship between concepts or entities, with full provenance and evidence.",
+  "type": "object",
+  "required": ["semantic_id", "subject", "relationship", "object", "proposition", "provenance", "lifecycle", "asserted_at", "asserted_by"],
+  "additionalProperties": false,
+  "properties": {
+    "semantic_id": {
+      "description": "Stable CURIE-form identifier",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "subject": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "relationship": {
+      "type": "string",
+      "enum": [
+        "specialises", "generalises", "references", "depends_on",
+        "part_of", "has_part", "instantiates", "instance_of",
+        "relates", "asserts", "evidenced_by", "governed_by"
+      ]
+    },
+    "object": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "confidence": {
+      "description": "Confidence level (0.0 - 1.0)",
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "context": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "proposition": {
+      "$ref": "https://world-semantic-foundation.org/schemas/proposition.schema.json"
+    },
+    "evidence": {
+      "description": "Evidence references",
+      "type": "array",
+      "items": {
+        "$ref": "https://world-semantic-foundation.org/schemas/evidence.schema.json"
+      }
+    },
+    "provenance": {
+      "$ref": "https://world-semantic-foundation.org/schemas/provenance.schema.json"
+    },
+    "validity": {
+      "$ref": "https://world-semantic-foundation.org/schemas/validity.schema.json"
+    },
+    "lifecycle": {
+      "description": "Assertion lifecycle status",
+      "type": "string",
+      "enum": ["submitted", "under_review", "accepted", "rejected", "retired", "disputed"]
+    },
+    "asserted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "asserted_by": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    }
+  }
+}

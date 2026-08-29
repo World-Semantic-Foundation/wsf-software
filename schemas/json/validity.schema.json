@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://world-semantic-foundation.org/schemas/validity.schema.json",
+  "title": "WSF Validity Period",
+  "description": "Schema for WSF Validity per wsf:Validity concept. Time-bounded period during which an assertion is in force.",
+  "type": "object",
+  "required": ["valid_from", "valid_until", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "valid_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "description": "End time (ISO 8601) or null for indefinite",
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "suspended", "expired", "revoked"]
+    }
+  }
+}

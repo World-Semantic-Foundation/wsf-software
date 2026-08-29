@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://world-semantic-foundation.org/schemas/provenance.schema.json",
+  "title": "WSF Provenance",
+  "description": "Schema for WSF Provenance per ADR-WSF-22. Captures who made a change, when, under what authority, with what evidence, and through what derivation chain.",
+  "type": "object",
+  "required": ["actor", "authority", "timestamp"],
+  "additionalProperties": false,
+  "properties": {
+    "actor": {
+      "description": "Actor who created/modified (CURIE of wsf:Actor)",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "authority": {
+      "description": "Authority under which the change was made",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "method": {
+      "description": "Method or process used",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "derived_from": {
+      "description": "Source derivation",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+      }
+    },
+    "version": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

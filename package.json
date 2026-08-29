@@ -1,0 +1,56 @@
+{
+  "name": "@wsf/semantic-engine",
+  "version": "0.1.0",
+  "description": "World Semantic Foundation : deployable Semantic Engine implementation per ADR-WSF-24.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "import": "./dist/services/index.js"
+    },
+    "./store": {
+      "types": "./dist/store/StoreLayer.d.ts",
+      "import": "./dist/store/StoreLayer.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    },
+    "./cli": {
+      "import": "./dist/cli/index.js"
+    }
+  },
+  "bin": {
+    "wsf": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/tests/",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "wsf",
+    "semantic-engine",
+    "world-semantic-foundation",
+    "ontology",
+    "knowledge-graph"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/World-Semantic-Foundation/wsf-software.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}

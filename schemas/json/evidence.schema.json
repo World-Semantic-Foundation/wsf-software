@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://world-semantic-foundation.org/schemas/evidence.schema.json",
+  "title": "WSF Evidence",
+  "description": "Schema for WSF Evidence per wsf:Evidence concept. Referenceable artifact supporting an assertion.",
+  "type": "object",
+  "required": ["semantic_id", "type", "location", "description", "provenance"],
+  "additionalProperties": false,
+  "properties": {
+    "semantic_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["document", "observation", "measurement", "expert_judgement", "derivation"]
+    },
+    "location": {
+      "description": "URI/IRI of the evidence artefact",
+      "type": "string",
+      "format": "uri"
+    },
+    "description": {
+      "type": "string"
+    },
+    "reliability": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "provenance": {
+      "$ref": "https://world-semantic-foundation.org/schemas/provenance.schema.json"
+    }
+  }
+}

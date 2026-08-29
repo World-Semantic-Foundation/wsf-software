@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://world-semantic-foundation.org/schemas/proposition.schema.json",
+  "title": "WSF Proposition",
+  "description": "Schema for WSF Proposition per wsf:Proposition concept. Statement about concepts or entities, independent of any particular assertion.",
+  "type": "object",
+  "required": ["semantic_id", "subject", "predicate", "object", "modality"],
+  "additionalProperties": false,
+  "properties": {
+    "semantic_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "subject": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "predicate": {
+      "type": "string",
+      "enum": [
+        "specialises", "generalises", "references", "depends_on",
+        "part_of", "has_part", "instantiates", "instance_of",
+        "relates", "asserts", "evidenced_by", "governed_by"
+      ]
+    },
+    "object": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "modality": {
+      "type": "string",
+      "enum": ["asserted", "negated", "conditional", "possible", "necessary"]
+    },
+    "qualifier": {
+      "type": "string"
+    }
+  }
+}

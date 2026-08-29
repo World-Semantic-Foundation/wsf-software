@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://world-semantic-foundation.org/schemas/concept.schema.json",
+  "title": "WSF Concept",
+  "description": "Schema for a WSF Concept per ADR-WSF-18 and ADR-WSF-20. Concepts are the foundational primitives of WSF.",
+  "type": "object",
+  "required": ["semantic_id", "preferred_name", "tier", "definition", "authority", "status", "version", "created_at", "modified_at"],
+  "additionalProperties": false,
+  "properties": {
+    "semantic_id": {
+      "description": "Stable CURIE-form identifier",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$",
+      "examples": ["wsf:Entity", "schema:Organization", "skos:Concept"]
+    },
+    "preferred_name": {
+      "description": "Preferred human-readable name",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "aliases": {
+      "description": "Alternative names for the concept",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "tier": {
+      "description": "Tier classification",
+      "type": "string",
+      "enum": ["Tier 1", "Tier 2", "Tier 3"]
+    },
+    "parent": {
+      "description": "Parent concept semantic_id (for specialisation chains)",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "definition": {
+      "description": "Formal definition text",
+      "type": "string",
+      "minLength": 1
+    },
+    "definition_markdown": {
+      "description": "Markdown rendering of the concept",
+      "type": "string"
+    },
+    "differentia": {
+      "description": "What distinguishes this concept from its parent",
+      "type": "string"
+    },
+    "scope_notes": {
+      "description": "Clarifying application boundaries",
+      "type": "string"
+    },
+    "counter_examples": {
+      "description": "What this concept is NOT",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "canonical_examples": {
+      "description": "Worked instances",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "authority": {
+      "description": "Authority responsible for the concept definition",
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "description": "Semantic status per SEMANTIC-STATUS-MODEL",
+      "type": "string",
+      "enum": ["Candidate", "Investigating", "Proposed", "Normative", "Deprecated", "Retired"]
+    },
+    "version": {
+      "description": "Version string (semver)",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "defined_by": {
+      "description": "ADRs that established this concept",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^ADR-WSF-\\d+$"
+      }
+    },
+    "related_concepts": {
+      "description": "Related concept semantic_ids",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z][A-Za-z0-9_]*$"
+      }
+    },
+    "created_at": {
+      "description": "Created timestamp (ISO 8601)",
+      "type": "string",
+      "format": "date-time"
+    },
+    "modified_at": {
+      "description": "Last modified timestamp (ISO 8601)",
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
