@@ -79,3 +79,6 @@ export default SemanticEngine;
 export * from './types/index.js';
 export * from './store/StoreLayer.js';
 export * from './services/index.js';
+export { PostgreSQLStore, type PostgreSQLConfig, POSTGRES_SCHEMA_DDL as POSTGRES_SCHEMA_DDL } from './store/postgresql/PostgreSQLStore.js';
+export { SQLiteStore, type SQLiteConfig, SQLITE_SCHEMA_DDL as SQLITE_SCHEMA_DDL } from './store/sqlite/SQLiteStore.js';
+export * from './server/RESTServer.js';
