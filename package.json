@@ -1,6 +1,6 @@
 {
   "name": "@wsf/semantic-engine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "World Semantic Foundation : deployable Semantic Engine implementation per ADR-WSF-24.",
   "type": "module",
   "main": "dist/index.js",
@@ -31,7 +31,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test dist/tests/",
+    "test": "tsc -p tsconfig.tests.json && node --test dist-tests/tests/",
     "lint": "tsc --noEmit"
   },
   "keywords": [

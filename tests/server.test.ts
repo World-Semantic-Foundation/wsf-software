@@ -6,6 +6,7 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { SemanticEngine } from '../src/index.js';
 import { RESTServer } from '../src/server/RESTServer.js';
+import type { Concept } from '../src/types/index.js';
 
 describe('RESTServer', () => {
   let engine: SemanticEngine;
@@ -53,7 +54,7 @@ describe('REST Endpoints (in-process)', () => {
   });
 
   test('createConcept + getConcept round trip', async () => {
-    const concept = {
+    const concept: Concept = {
       semantic_id: 'wsf:TestRest',
       preferred_name: 'Test REST',
       tier: 'Tier 1',

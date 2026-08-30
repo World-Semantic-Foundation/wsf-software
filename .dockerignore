@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-tests
+tests
+*.tsbuildinfo
+.env
+.git
+.gitignore
+deploy
+docs
+schemas

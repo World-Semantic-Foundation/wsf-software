@@ -90,20 +90,43 @@ wsf-software/
     index.ts                 : Main entry point ; SemanticEngine class
     types/                   : Type definitions (Concept, Assertion, etc.)
     store/                   : Store Layer interface + MemoryStore implementation
+    store/postgresql/        : PostgreSQL backend (7-table DDL, transactions)
+    store/sqlite/            : SQLite backend (7-table DDL, WAL mode)
+    store/neo4j/             : Neo4j backend (graph model, constraints, fulltext index)
+    store/mongodb/           : MongoDB backend (7 collections, JSON Schema validators)
+    validation/              : SHACL validator + WSF shape registry
+    query/                   : GraphQueryEngine (Cypher/SPARQL portable subsets)
     services/                : 8 service modules
     api/
       rest/                  : REST API handlers
       grpc/                  : gRPC scaffolding (planned)
+    server/                  : RESTServer + production entrypoint (main.ts)
     cli/                     : Command-line interface
   schemas/
     json/                    : JSON Schema definitions (Concept, Relationship, Assertion, etc.)
     protobuf/                : Protobuf schemas (planned)
-  tests/                     : Test suite (planned)
+  deploy/                    : Production deployment templates (Dockerfile, compose, env)
+  tests/                     : Test suite (54 tests)
   docs/
     ARCHITECTURE.md          : Detailed architecture documentation
   package.json               : npm package configuration
   tsconfig.json              : TypeScript compiler configuration
 ```
+
+## Production Deployment
+
+See [deploy/README.md](deploy/README.md) : Dockerfile (multi-stage, non-root,
+healthcheck), docker-compose reference topology with one profile per store
+backend, and the environment template (`.env.example`). The service-mode
+entrypoint is `src/server/main.ts`, configured entirely via environment
+variables.
+
+## Phase 1 Capabilities (v0.2.0)
+
+- **5 store backends** : Memory, PostgreSQL, SQLite (v0.1.0) + Neo4j, MongoDB (v0.2.0)
+- **Full SHACL validation** : zero-dependency SHACL subset validator executing the 7 normative WSF shapes (canonical source: wsf-spec/shacl/wsf-shapes.ttl) against JSON and JSON-LD representations
+- **Graph query layer** : portable Cypher and SPARQL subsets over any backend; native Cypher passthrough on Neo4jStore
+- **Production deployment templates** : service-mode container with selectable backends
 
 ## Concept Vocabulary Coverage
 

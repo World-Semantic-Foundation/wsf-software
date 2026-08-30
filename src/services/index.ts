@@ -14,6 +14,9 @@
  */
 
 import type { StoreLayer, MemoryStore } from '../store/StoreLayer.js';
+import { SHACLValidator } from '../validation/SHACLValidator.js';
+import { WSF_SHAPES, SHAPE_BY_TARGET_CLASS } from '../validation/shapes.js';
+import { GraphQueryEngine } from '../query/GraphQueryEngine.js';
 import type {
   Concept,
   Relationship,
@@ -250,22 +253,70 @@ export class IdentityService {
 // ============================================================================
 
 export class ValidationService {
-  constructor(private store: StoreLayer) {}
+  private validator: SHACLValidator;
 
+  constructor(private store: StoreLayer) {
+    this.validator = new SHACLValidator();
+    for (const shape of WSF_SHAPES) {
+      this.validator.registerShape(shape);
+    }
+  }
+
+  /**
+   * Validate representations against the WSF SHACL shapes.
+   *
+   * JSON and JSON-LD representations are validated structurally against
+   * the registered shapes (per wsf-spec/shacl/wsf-shapes.ttl). Other
+   * formats return an informational result pending format-specific parsers.
+   */
   async validate(request: ValidationRequest): Promise<EngineResult<ValidationReport>> {
     const start = Date.now();
     const results: ValidationResult[] = [];
 
-    // Minimal SHACL-like validation: type conformance, required fields, cardinality
     for (const rep of request.representations) {
-      // In production: parse rep.content against shapes
-      // For now: return empty conformance
-      results.push({
-        representation: rep.semantic_id,
-        severity: 'info',
-        path: '',
-        message: `Validated ${rep.subject} in ${rep.format}`,
-      });
+      if (rep.format !== 'json' && rep.format !== 'json-ld') {
+        results.push({
+          representation: rep.semantic_id,
+          severity: 'info',
+          path: '',
+          message: `Format '${rep.format}' accepted; structural validation applies to json / json-ld representations`,
+        });
+        continue;
+      }
+
+      let parsed: Record<string, unknown>;
+      try {
+        const text = typeof rep.content === 'string' ? rep.content : new TextDecoder().decode(rep.content);
+        parsed = JSON.parse(text) as Record<string, unknown>;
+      } catch {
+        results.push({
+          representation: rep.semantic_id,
+          severity: 'violation',
+          path: '',
+          message: 'Representation content is not valid JSON',
+        });
+        continue;
+      }
+
+      // JSON-LD @graph: validate each node; otherwise validate the single node
+      const graph = parsed['@graph'];
+      const nodes: Record<string, unknown>[] = Array.isArray(graph)
+        ? (graph as Record<string, unknown>[])
+        : [parsed];
+
+      for (const node of nodes) {
+        const shapeIri = this.selectShape(node, request.shapes);
+        if (!shapeIri) {
+          results.push({
+            representation: rep.semantic_id,
+            severity: 'warning',
+            path: '',
+            message: 'No applicable shape identified (no @type match and no heuristic match); node not validated',
+          });
+          continue;
+        }
+        results.push(...this.validator.validateNode(node, shapeIri, rep.semantic_id));
+      }
     }
 
     const report: ValidationReport = {
@@ -275,6 +326,51 @@ export class ValidationService {
     };
 
     return { success: true, data: report };
+  }
+
+  /**
+   * Validate an engine object directly (concept, relationship, assertion)
+   * without a Representation envelope. Used by services and tests.
+   */
+  validateObject(node: Record<string, unknown>, shapeIri: string, subject: CURIE): ValidationReport {
+    const start = Date.now();
+    const results = this.validator.validateNode(node, shapeIri, subject);
+    return {
+      results,
+      conforms: results.filter(r => r.severity === 'violation').length === 0,
+      validation_time_ms: Date.now() - start,
+    };
+  }
+
+  /** Registered shape IRIs. */
+  listShapes(): string[] {
+    return this.validator.listShapes();
+  }
+
+  /**
+   * Shape selection: explicit request shapes win; then JSON-LD @type;
+   * then structural heuristics on the node fields.
+   */
+  private selectShape(node: Record<string, unknown>, requested?: CURIE[]): string | null {
+    if (requested && requested.length > 0) {
+      for (const iri of requested) {
+        if (this.validator.getShape(iri)) return iri;
+      }
+    }
+    const type = node['@type'];
+    if (typeof type === 'string' && SHAPE_BY_TARGET_CLASS[type]) {
+      return SHAPE_BY_TARGET_CLASS[type];
+    }
+    if (Array.isArray(type)) {
+      for (const t of type) {
+        if (typeof t === 'string' && SHAPE_BY_TARGET_CLASS[t]) return SHAPE_BY_TARGET_CLASS[t];
+      }
+    }
+    // Structural heuristics
+    if ('tier' in node && 'definition' in node) return 'wsf:ConceptShape';
+    if ('lifecycle' in node && 'proposition' in node) return 'wsf:AssertionShape';
+    if ('type' in node && 'subject' in node && 'object' in node) return 'wsf:RelationshipShape';
+    return null;
   }
 }
 
@@ -342,11 +438,39 @@ export class InferenceService {
 // ============================================================================
 
 export class QueryService {
-  constructor(private store: StoreLayer) {}
+  private graph: GraphQueryEngine;
+
+  constructor(private store: StoreLayer) {
+    this.graph = new GraphQueryEngine(store);
+  }
 
   async execute<T = unknown>(query: Query): Promise<EngineResult<QueryResult<T>>> {
+    // Graph queries route through the portable GraphQueryEngine (Cypher /
+    // SPARQL subsets over any backend). Native Cypher passthrough remains
+    // available via Neo4jStore.executeQuery() for full Cypher workloads.
+    if (query.type === 'graph') {
+      try {
+        const result = await this.graph.execute<T>(query);
+        return { success: true, data: result };
+      } catch (error) {
+        return {
+          success: false,
+          error: { code: 'QUERY_UNSUPPORTED', message: (error as Error).message },
+        };
+      }
+    }
     const result = await this.store.executeQuery<T>(query);
     return { success: true, data: result };
+  }
+
+  /** Execute a Cypher-subset expression directly. */
+  async executeCypher<T = unknown>(expression: string): Promise<EngineResult<QueryResult<T>>> {
+    return this.execute<T>({ type: 'graph', expression });
+  }
+
+  /** Execute a SPARQL-subset expression directly. */
+  async executeSparql<T = unknown>(expression: string): Promise<EngineResult<QueryResult<T>>> {
+    return this.execute<T>({ type: 'graph', expression });
   }
 
   async searchConcepts(search_term: string): Promise<EngineResult<Concept[]>> {

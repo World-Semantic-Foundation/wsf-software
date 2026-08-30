@@ -1,0 +1,107 @@
+# WSF Semantic Engine : Production Compose Topology
+#
+# Brings up the Semantic Engine with selectable store backends.
+# Backend selection is via WSF_STORE_BACKEND in the environment (see
+# .env.example). All credentials are injected from the environment;
+# no secrets are stored in this file.
+#
+# Usage:
+#   cp .env.example .env   # fill in credentials
+#   docker compose --env-file .env up -d
+#
+# Backend profiles:
+#   docker compose --profile postgres up -d    ; relational backend
+#   docker compose --profile neo4j up -d       ; graph backend
+#   docker compose --profile mongodb up -d     ; document backend
+#   (sqlite and memory backends need no service; embedded in the engine)
+
+services:
+  engine:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: wsf/semantic-engine:0.2.0
+    restart: unless-stopped
+    ports:
+      - "${WSF_PORT:-8080}:8080"
+    environment:
+      WSF_HOST: 0.0.0.0
+      WSF_PORT: "8080"
+      WSF_API_PREFIX: ${WSF_API_PREFIX:-/v1}
+      WSF_CORS_ORIGINS: ${WSF_CORS_ORIGINS:-*}
+      WSF_STORE_BACKEND: ${WSF_STORE_BACKEND:-postgresql}
+      # PostgreSQL
+      WSF_PG_HOST: postgres
+      WSF_PG_PORT: "5432"
+      WSF_PG_DATABASE: ${WSF_PG_DATABASE:-wsf}
+      WSF_PG_USER: ${WSF_PG_USER:-wsf}
+      WSF_PG_PASSWORD: ${WSF_PG_PASSWORD:?WSF_PG_PASSWORD must be set in the environment}
+      WSF_PG_SSL: ${WSF_PG_SSL:-false}
+      # Neo4j
+      WSF_NEO4J_URI: bolt://neo4j:7687
+      WSF_NEO4J_USERNAME: ${WSF_NEO4J_USERNAME:-neo4j}
+      WSF_NEO4J_PASSWORD: ${WSF_NEO4J_PASSWORD:-}
+      WSF_NEO4J_DATABASE: ${WSF_NEO4J_DATABASE:-neo4j}
+      # MongoDB
+      WSF_MONGO_URI: mongodb://${WSF_MONGO_USER:-wsf}:${WSF_MONGO_PASSWORD:-}@mongodb:27017
+      WSF_MONGO_DATABASE: ${WSF_MONGO_DATABASE:-wsf}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+      neo4j:
+        condition: service_healthy
+        required: false
+      mongodb:
+        condition: service_healthy
+        required: false
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${WSF_PG_DATABASE:-wsf}
+      POSTGRES_USER: ${WSF_PG_USER:-wsf}
+      POSTGRES_PASSWORD: ${WSF_PG_PASSWORD:?WSF_PG_PASSWORD must be set in the environment}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  neo4j:
+    image: neo4j:5-community
+    profiles: ["neo4j"]
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${WSF_NEO4J_USERNAME:-neo4j}/${WSF_NEO4J_PASSWORD:?WSF_NEO4J_PASSWORD must be set for the neo4j profile}
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:7474 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  mongodb:
+    image: mongo:7
+    profiles: ["mongodb"]
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${WSF_MONGO_USER:-wsf}
+      MONGO_INITDB_ROOT_PASSWORD: ${WSF_MONGO_PASSWORD:?WSF_MONGO_PASSWORD must be set for the mongodb profile}
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  mongodb_data:
