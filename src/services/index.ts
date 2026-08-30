@@ -17,10 +17,18 @@ import type { StoreLayer, MemoryStore } from '../store/StoreLayer.js';
 import { SHACLValidator } from '../validation/SHACLValidator.js';
 import { WSF_SHAPES, SHAPE_BY_TARGET_CLASS } from '../validation/shapes.js';
 import { GraphQueryEngine } from '../query/GraphQueryEngine.js';
+import {
+  SEMANTIC_STATUS_TRANSITIONS,
+  ASSERTION_LIFECYCLE_TRANSITIONS,
+  assertTransition,
+} from '../lifecycle/transitions.js';
+import { SimulationService } from '../simulation/SimulationService.js';
 import type {
   Concept,
   Relationship,
   Assertion,
+  AssertionLifecycle,
+  SemanticStatus,
   CURIE,
   Provenance,
   EvidenceReference,
@@ -99,8 +107,47 @@ export class ConceptService {
     return this.update(child, { parent }, provenance);
   }
 
+  /**
+   * Transition a concept's semantic status through the 6-stage state
+   * machine (per SEMANTIC-STATUS-MODEL). Illegal transitions are rejected
+   * with a LIFECYCLE_TRANSITION_ILLEGAL error; legal transitions are
+   * recorded in the audit trail (per ADR-WSF-22).
+   */
+  async transitionStatus(
+    semantic_id: CURIE,
+    to: SemanticStatus,
+    provenance: Provenance,
+  ): Promise<EngineResult<Concept>> {
+    const existing = await this.store.getConcept(semantic_id);
+    if (!existing) {
+      return {
+        success: false,
+        error: { code: 'CONCEPT_NOT_FOUND', message: `Concept ${semantic_id} not found` },
+      };
+    }
+    try {
+      assertTransition('concept status', SEMANTIC_STATUS_TRANSITIONS, existing.status, to);
+    } catch (error) {
+      return {
+        success: false,
+        error: { code: 'LIFECYCLE_TRANSITION_ILLEGAL', message: (error as Error).message },
+      };
+    }
+    const updated = await this.store.updateConcept(semantic_id, { status: to }, provenance);
+    await this.store.recordAudit({
+      semantic_id: `wsf:audit:${crypto.randomUUID()}`,
+      action: 'update',
+      affected: semantic_id,
+      actor: provenance.actor,
+      timestamp: new Date().toISOString(),
+      before: { status: existing.status },
+      after: { status: to },
+    });
+    return { success: true, data: updated };
+  }
+
   async retire(semantic_id: CURIE, provenance: Provenance): Promise<EngineResult<Concept>> {
-    return this.update(semantic_id, { status: 'Retired' }, provenance);
+    return this.transitionStatus(semantic_id, 'Retired', provenance);
   }
 }
 
@@ -127,8 +174,14 @@ export class RelationshipService {
     type?: string,
     subject?: CURIE,
     object?: CURIE,
+    options?: { context?: CURIE; as_of?: string; active_only?: boolean },
   ): Promise<EngineResult<Relationship[]>> {
-    const results = await this.store.findRelationships({ type, subject, object });
+    const results = await this.store.findRelationships({
+      type, subject, object,
+      context: options?.context,
+      as_of: options?.as_of,
+      active_only: options?.active_only,
+    });
     return { success: true, data: results };
   }
 
@@ -202,17 +255,61 @@ export class AssertionService {
   }
 
   async accept(semantic_id: CURIE, provenance: Provenance): Promise<EngineResult<Assertion>> {
-    return {
-      success: true,
-      data: await this.store.updateAssertion(semantic_id, { lifecycle: 'accepted' }, provenance),
-    };
+    return this.transitionLifecycle(semantic_id, 'accepted', provenance);
   }
 
   async reject(semantic_id: CURIE, provenance: Provenance): Promise<EngineResult<Assertion>> {
-    return {
-      success: true,
-      data: await this.store.updateAssertion(semantic_id, { lifecycle: 'rejected' }, provenance),
-    };
+    return this.transitionLifecycle(semantic_id, 'rejected', provenance);
+  }
+
+  async dispute(semantic_id: CURIE, provenance: Provenance): Promise<EngineResult<Assertion>> {
+    return this.transitionLifecycle(semantic_id, 'disputed', provenance);
+  }
+
+  async retire(semantic_id: CURIE, provenance: Provenance): Promise<EngineResult<Assertion>> {
+    return this.transitionLifecycle(semantic_id, 'retired', provenance);
+  }
+
+  async startReview(semantic_id: CURIE, provenance: Provenance): Promise<EngineResult<Assertion>> {
+    return this.transitionLifecycle(semantic_id, 'under_review', provenance);
+  }
+
+  /**
+   * Transition an assertion through its lifecycle state machine
+   * (per ADR-WSF-22). Illegal transitions are rejected with a
+   * LIFECYCLE_TRANSITION_ILLEGAL error; legal transitions are audited.
+   */
+  async transitionLifecycle(
+    semantic_id: CURIE,
+    to: AssertionLifecycle,
+    provenance: Provenance,
+  ): Promise<EngineResult<Assertion>> {
+    const existing = await this.store.getAssertion(semantic_id);
+    if (!existing) {
+      return {
+        success: false,
+        error: { code: 'ASSERTION_NOT_FOUND', message: `Assertion ${semantic_id} not found` },
+      };
+    }
+    try {
+      assertTransition('assertion lifecycle', ASSERTION_LIFECYCLE_TRANSITIONS, existing.lifecycle, to);
+    } catch (error) {
+      return {
+        success: false,
+        error: { code: 'LIFECYCLE_TRANSITION_ILLEGAL', message: (error as Error).message },
+      };
+    }
+    const updated = await this.store.updateAssertion(semantic_id, { lifecycle: to }, provenance);
+    await this.store.recordAudit({
+      semantic_id: `wsf:audit:${crypto.randomUUID()}`,
+      action: 'update',
+      affected: semantic_id,
+      actor: provenance.actor,
+      timestamp: new Date().toISOString(),
+      before: { lifecycle: existing.lifecycle },
+      after: { lifecycle: to },
+    });
+    return { success: true, data: updated };
   }
 }
 
@@ -515,6 +612,7 @@ export interface ServiceContainer {
   inference: InferenceService;
   query: QueryService;
   audit: AuditService;
+  simulation: SimulationService;
 }
 
 export function createServices(store: StoreLayer): ServiceContainer {
@@ -527,5 +625,6 @@ export function createServices(store: StoreLayer): ServiceContainer {
     inference: new InferenceService(store),
     query: new QueryService(store),
     audit: new AuditService(store),
+    simulation: new SimulationService(),
   };
 }

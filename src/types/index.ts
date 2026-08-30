@@ -465,6 +465,54 @@ export interface Representation {
 }
 
 // ============================================================================
+// Section 15 : Event and State (per ADR-WSF-27, Digital Twin and Simulation)
+// ============================================================================
+
+/**
+ * A semantic event (per wsf:Event concept).
+ *
+ * Events are the atomic units of state change: each event applies a set
+ * of property changes to an entity at a point in time, with full
+ * provenance.
+ */
+export interface SemanticEvent {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Event type (e.g. 'order.created', 'order.shipped'). */
+  type: string;
+  /** Entity the event applies to (CURIE). */
+  subject: CURIE;
+  /** Occurrence timestamp (ISO 8601). */
+  occurred_at: string;
+  /** Property changes applied by this event (merged onto entity state). */
+  changes: Record<string, unknown>;
+  /** Actor that performed the event (CURIE). */
+  actor?: CURIE;
+  /** Context qualifier (per ADR-WSF-14). */
+  context?: CURIE;
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+}
+
+/**
+ * An entity state snapshot (per wsf:State concept).
+ *
+ * States are derived: the state of an entity at instant T is the result
+ * of applying, in occurrence order, every event for that entity with
+ * occurred_at <= T.
+ */
+export interface EntityState {
+  /** Entity semantic_id. */
+  entity: CURIE;
+  /** State properties at captured_at. */
+  properties: Record<string, unknown>;
+  /** Derivation instant (ISO 8601). */
+  captured_at: string;
+  /** Event semantic_ids applied to reach this state (in order). */
+  derived_from: CURIE[];
+}
+
+// ============================================================================
 // Section 14 : Audit Trail (Tier 2, per ADR-WSF-22)
 // ============================================================================
 

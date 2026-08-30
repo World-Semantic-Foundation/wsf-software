@@ -94,6 +94,9 @@ export interface RelationshipFilter {
   object?: CURIE;
   context?: CURIE;
   active_only?: boolean;
+  /** Bitemporal as-of timestamp (ISO 8601): only relationships whose
+   * validity window covers this instant are returned. */
+  as_of?: string;
 }
 
 export interface AssertionFilter {
@@ -104,6 +107,11 @@ export interface AssertionFilter {
   asserted_by?: CURIE;
   asserted_after?: string;
   asserted_before?: string;
+  /** Context qualifier (per ADR-WSF-14). */
+  context?: CURIE;
+  /** Bitemporal as-of timestamp (ISO 8601): assertion validity window
+   * must cover this instant. */
+  as_of?: string;
 }
 
 export interface AuditFilter {
@@ -242,12 +250,12 @@ export class MemoryStore implements StoreLayer {
     if (filter.context) {
       results = results.filter(r => r.context === filter.context);
     }
-    if (filter.active_only) {
-      const now = new Date().toISOString();
+    if (filter.active_only || filter.as_of) {
+      const instant = filter.as_of ?? new Date().toISOString();
       results = results.filter(r => {
         if (!r.validity) return true;
-        const validFrom = r.validity.valid_from <= now;
-        const validUntil = r.validity.valid_until === null || r.validity.valid_until >= now;
+        const validFrom = r.validity.valid_from <= instant;
+        const validUntil = r.validity.valid_until === null || r.validity.valid_until >= instant;
         return validFrom && validUntil;
       });
     }
@@ -308,6 +316,18 @@ export class MemoryStore implements StoreLayer {
     if (filter.asserted_before) {
       results = results.filter(a => a.asserted_at <= filter.asserted_before!);
     }
+    if (filter.context) {
+      results = results.filter(a => a.context === filter.context);
+    }
+    if (filter.as_of) {
+      const instant = filter.as_of;
+      results = results.filter(a => {
+        if (!a.validity) return true;
+        const validFrom = a.validity.valid_from <= instant;
+        const validUntil = a.validity.valid_until === null || a.validity.valid_until >= instant;
+        return validFrom && validUntil;
+      });
+    }
     return results;
   }
 
@@ -328,7 +348,15 @@ export class MemoryStore implements StoreLayer {
     return Array.from(this.namespaces.values());
   }
 
+  /**
+   * Resolve an identifier per ADR-WSF-21. Strategies:
+   *   exact            : direct CURIE lookup (confidence 1.0)
+   *   prefix_wildcard  : 'prefix:*' or namespace-scoped match (0.9 single, alternatives otherwise)
+   *   cross_namespace  : same local name resolved across all registered namespaces (0.7)
+   *   canonical        : case-normalised local name + alias match (0.8)
+   */
   async resolveIdentifier(resolution: IdentifierResolution): Promise<IdentifierResolutionResult> {
+    // exact is always attempted first
     const exact = this.concepts.get(resolution.curie);
     if (exact) {
       return {
@@ -338,11 +366,65 @@ export class MemoryStore implements StoreLayer {
         strategy: 'exact',
       };
     }
-    return {
-      curie: resolution.curie,
-      confidence: 0.0,
-      strategy: resolution.strategy,
-    };
+
+    const all = Array.from(this.concepts.values());
+    const [prefix, local] = resolution.curie.split(':');
+
+    switch (resolution.strategy) {
+      case 'exact':
+        return { curie: resolution.curie, confidence: 0.0, strategy: 'exact' };
+
+      case 'prefix_wildcard': {
+        // 'wsf:*' or 'wsf:' matches every concept in the namespace
+        const matches = local === '*' || local === undefined || local === ''
+          ? all.filter(c => c.semantic_id.startsWith(prefix + ':'))
+          : all.filter(c => c.semantic_id.startsWith(prefix + ':') && c.semantic_id.includes(local));
+        if (matches.length === 1) {
+          return { curie: resolution.curie, resolved_to: matches[0].semantic_id, confidence: 0.9, strategy: 'prefix_wildcard' };
+        }
+        return {
+          curie: resolution.curie,
+          confidence: 0.0,
+          strategy: 'prefix_wildcard',
+          alternatives: matches.map(c => c.semantic_id),
+        };
+      }
+
+      case 'cross_namespace': {
+        // Same local name in every registered namespace
+        const localName = local ?? resolution.curie;
+        const matches = all.filter(c => c.semantic_id.split(':')[1] === localName);
+        if (matches.length === 1) {
+          return { curie: resolution.curie, resolved_to: matches[0].semantic_id, confidence: 0.7, strategy: 'cross_namespace' };
+        }
+        return {
+          curie: resolution.curie,
+          confidence: 0.0,
+          strategy: 'cross_namespace',
+          alternatives: matches.map(c => c.semantic_id),
+        };
+      }
+
+      case 'canonical': {
+        // Case-normalised local name, then alias match
+        const normalised = (local ?? resolution.curie).toLowerCase();
+        const byName = all.filter(c => c.semantic_id.split(':')[1]?.toLowerCase() === normalised);
+        const byAlias = all.filter(c => (c.aliases ?? []).some(a => a.toLowerCase() === normalised || a.toLowerCase().endsWith('/' + normalised)));
+        const matches = [...byName, ...byAlias.filter(c => !byName.includes(c))];
+        if (matches.length === 1) {
+          return { curie: resolution.curie, resolved_to: matches[0].semantic_id, confidence: 0.8, strategy: 'canonical' };
+        }
+        return {
+          curie: resolution.curie,
+          confidence: 0.0,
+          strategy: 'canonical',
+          alternatives: matches.map(c => c.semantic_id),
+        };
+      }
+
+      default:
+        return { curie: resolution.curie, confidence: 0.0, strategy: resolution.strategy };
+    }
   }
 
   // ----- Evidence -----

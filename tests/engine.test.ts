@@ -208,9 +208,13 @@ describe('Assertion Service', () => {
     };
     await engine.services.assertion.submit(assertion);
 
+    const prov = { actor: 'wsf:Actor', authority: 'wsf:Authority', timestamp: new Date().toISOString() };
+    const reviewResult = await engine.services.assertion.startReview('wsf:assertion:accept-test', prov);
+    assert.equal(reviewResult.success, true);
+
     const acceptResult = await engine.services.assertion.accept(
       'wsf:assertion:accept-test',
-      { actor: 'wsf:Actor', authority: 'wsf:Authority', timestamp: new Date().toISOString() },
+      prov,
     );
     assert.equal(acceptResult.success, true);
     assert.equal(acceptResult.data?.lifecycle, 'accepted');

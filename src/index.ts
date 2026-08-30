@@ -86,4 +86,6 @@ export { MongoDBStore, type MongoDBConfig, type MongoCollection, MONGODB_COLLECT
 export { SHACLValidator, type NodeShape, type PropertyShape, type SHACLDatatype } from './validation/SHACLValidator.js';
 export { WSF_SHAPES, SHAPE_BY_TARGET_CLASS, CONCEPT_SHAPE, RELATIONSHIP_SHAPE, ASSERTION_SHAPE, PROVENANCE_SHAPE, VALIDITY_SHAPE, PROPOSITION_SHAPE, EVIDENCE_SHAPE } from './validation/shapes.js';
 export { GraphQueryEngine, QueryUnsupportedError } from './query/GraphQueryEngine.js';
+export { SEMANTIC_STATUS_TRANSITIONS, ASSERTION_LIFECYCLE_TRANSITIONS, assertTransition, legalTransitions, IllegalTransitionError } from './lifecycle/transitions.js';
+export { SimulationService } from './simulation/SimulationService.js';
 export * from './server/RESTServer.js';
