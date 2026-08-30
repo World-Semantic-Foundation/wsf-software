@@ -614,8 +614,200 @@ export interface AuthorityRecord {
 }
 
 // ============================================================================
+// Section 17 : Semantic Specialisation (Tier 3, per ADR-WSF-07 and CR-WSF-17)
+// ============================================================================
+
+/**
+ * A capability specification (per wsf:Capability, ADR-WSF-07).
+ *
+ * The ADR-WSF-07 ladder: a Capacity is an inherent potential; an
+ * Ability is an exercised, demonstrable potential; a Capability is an
+ * ability made available for use in a context. Capabilities are
+ * dispositions (grounded in wsf:Disposition): they exist before they
+ * are exercised and are realised by processes and services.
+ */
+export interface CapabilitySpec {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Capability name. */
+  name: string;
+  /** Position on the ADR-WSF-07 ladder. */
+  kind: 'capacity' | 'ability' | 'capability';
+  /** Parent capability (decomposition tree). */
+  parent?: CURIE;
+  /** Processes or services that realise this capability. */
+  realised_by?: CURIE[];
+  /** Resources or actors this capability requires. */
+  requires?: CURIE[];
+  /** Definition text. */
+  definition: string;
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+}
+
+/**
+ * An activity specification (per wsf:Activity).
+ *
+ * Activities are the ordered units of a process. On completion an
+ * activity emits an event whose changes are applied to the process
+ * instance state (per the ADR-WSF-27 simulation pattern).
+ */
+export interface ActivitySpec {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Activity name. */
+  name: string;
+  /** Sequence position (1-based). */
+  order: number;
+  /** Event type emitted on completion. */
+  event_type?: string;
+  /** State changes applied on completion. */
+  changes?: Record<string, unknown>;
+}
+
+/**
+ * A process specification (per wsf:Process).
+ *
+ * Processes are ordered activity sequences with declared inputs and
+ * outputs. Executing a process instance applies each activity in order,
+ * recording an event per activity.
+ */
+export interface ProcessSpec {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Process name. */
+  name: string;
+  /** Ordered activities. */
+  activities: ActivitySpec[];
+  /** Declared inputs. */
+  inputs?: string[];
+  /** Declared outputs. */
+  outputs?: string[];
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+}
+
+/**
+ * A goal (per wsf:Goal).
+ *
+ * Goals are desired states. Goals decompose into sub-goals and are
+ * pursued through objectives.
+ */
+export interface GoalSpec {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Goal name. */
+  name: string;
+  /** Description of the desired state. */
+  description?: string;
+  /** Parent goal (decomposition). */
+  parent?: CURIE;
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+}
+
+/**
+ * An objective (per wsf:Objective).
+ *
+ * Objectives are measurable steps toward a goal, assessed through
+ * linked measures.
+ */
+export interface ObjectiveSpec {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Objective name. */
+  name: string;
+  /** Goal this objective serves. */
+  goal: CURIE;
+  /** Linked measure semantic_ids. */
+  measures: CURIE[];
+  /** Target completion date (ISO 8601). */
+  target_date?: string;
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+}
+
+/**
+ * A measure (per wsf:Measure).
+ *
+ * Measures quantify objective attainment: an actual value assessed
+ * against a target in a direction of improvement.
+ */
+export interface MeasureSpec {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Measure name. */
+  name: string;
+  /** Unit of measurement. */
+  unit?: string;
+  /** Target value. */
+  target: number;
+  /** Direction of improvement. */
+  direction: 'min' | 'max';
+  /** Current actual value (null if unmeasured). */
+  actual: number | null;
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+}
+
+/**
+ * A rule (per wsf:Rule).
+ *
+ * Rules are evaluable constraint expressions over entity state.
+ * Rules with severity violation MUST hold; warnings SHOULD hold.
+ */
+export interface RuleSpec {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Rule name. */
+  name: string;
+  /** Entity state field under constraint. */
+  field: string;
+  /** Comparison operator. */
+  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'present' | 'matches';
+  /** Comparison value (unused for 'present'). */
+  value?: unknown;
+  /** Severity when the rule does not hold. */
+  severity: 'violation' | 'warning';
+  /** Human-readable message. */
+  message?: string;
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+}
+
+/**
+ * A policy (per wsf:Policy).
+ *
+ * Policies group rules under a governance intent. Enforcing policies
+ * produce violations; advisory policies produce warnings only.
+ */
+export interface PolicySpec {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Policy name. */
+  name: string;
+  /** Member rule semantic_ids. */
+  rules: CURIE[];
+  /** Enforcement effect. */
+  effect: 'enforce' | 'advise';
+  /** Semantic status per SEMANTIC-STATUS-MODEL. */
+  status: SemanticStatus;
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+}
+
+/** Result of evaluating one rule against an entity state. */
+export interface RuleEvaluation {
+  rule: CURIE;
+  holds: boolean;
+  severity: 'violation' | 'warning';
+  message: string;
+}
+
+// ============================================================================
 // Section 14 : Audit Trail (Tier 2, per ADR-WSF-22)
 // ============================================================================
+
 
 /**
  * Audit entry (per Audit Service).

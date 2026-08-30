@@ -29,6 +29,12 @@ import {
   AuthorityService,
   ReferenceService,
 } from './supporting.js';
+import {
+  CapabilityService,
+  ProcessService,
+  GoalService,
+  PolicyService,
+} from './specialisation.js';
 import type {
   Concept,
   Relationship,
@@ -623,9 +629,14 @@ export interface ServiceContainer {
   evidence: EvidenceService;
   authority: AuthorityService;
   reference: ReferenceService;
+  capability: CapabilityService;
+  process: ProcessService;
+  goal: GoalService;
+  policy: PolicyService;
 }
 
 export function createServices(store: StoreLayer): ServiceContainer {
+  const simulation = new SimulationService();
   return {
     concept: new ConceptService(store),
     relationship: new RelationshipService(store),
@@ -635,10 +646,14 @@ export function createServices(store: StoreLayer): ServiceContainer {
     inference: new InferenceService(store),
     query: new QueryService(store),
     audit: new AuditService(store),
-    simulation: new SimulationService(),
+    simulation,
     terminology: new TerminologyService(store),
     evidence: new EvidenceService(store),
     authority: new AuthorityService(store),
     reference: new ReferenceService(store),
+    capability: new CapabilityService(store),
+    process: new ProcessService(store, simulation),
+    goal: new GoalService(store),
+    policy: new PolicyService(store),
   };
 }

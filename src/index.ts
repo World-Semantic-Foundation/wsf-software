@@ -89,4 +89,5 @@ export { GraphQueryEngine, QueryUnsupportedError } from './query/GraphQueryEngin
 export { SEMANTIC_STATUS_TRANSITIONS, ASSERTION_LIFECYCLE_TRANSITIONS, assertTransition, legalTransitions, IllegalTransitionError } from './lifecycle/transitions.js';
 export { SimulationService } from './simulation/SimulationService.js';
 export { TerminologyService, EvidenceService, AuthorityService, ReferenceService, type EvidencePolicy, type EvidenceSufficiencyReport } from './services/supporting.js';
+export { CapabilityService, ProcessService, GoalService, PolicyService, type RealisationTrace, type MeasureAttainment, type ObjectiveAttainment } from './services/specialisation.js';
 export * from './server/RESTServer.js';
