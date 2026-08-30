@@ -23,6 +23,12 @@ import {
   assertTransition,
 } from '../lifecycle/transitions.js';
 import { SimulationService } from '../simulation/SimulationService.js';
+import {
+  TerminologyService,
+  EvidenceService,
+  AuthorityService,
+  ReferenceService,
+} from './supporting.js';
 import type {
   Concept,
   Relationship,
@@ -613,6 +619,10 @@ export interface ServiceContainer {
   query: QueryService;
   audit: AuditService;
   simulation: SimulationService;
+  terminology: TerminologyService;
+  evidence: EvidenceService;
+  authority: AuthorityService;
+  reference: ReferenceService;
 }
 
 export function createServices(store: StoreLayer): ServiceContainer {
@@ -626,5 +636,9 @@ export function createServices(store: StoreLayer): ServiceContainer {
     query: new QueryService(store),
     audit: new AuditService(store),
     simulation: new SimulationService(),
+    terminology: new TerminologyService(store),
+    evidence: new EvidenceService(store),
+    authority: new AuthorityService(store),
+    reference: new ReferenceService(store),
   };
 }

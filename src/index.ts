@@ -88,4 +88,5 @@ export { WSF_SHAPES, SHAPE_BY_TARGET_CLASS, CONCEPT_SHAPE, RELATIONSHIP_SHAPE, A
 export { GraphQueryEngine, QueryUnsupportedError } from './query/GraphQueryEngine.js';
 export { SEMANTIC_STATUS_TRANSITIONS, ASSERTION_LIFECYCLE_TRANSITIONS, assertTransition, legalTransitions, IllegalTransitionError } from './lifecycle/transitions.js';
 export { SimulationService } from './simulation/SimulationService.js';
+export { TerminologyService, EvidenceService, AuthorityService, ReferenceService, type EvidencePolicy, type EvidenceSufficiencyReport } from './services/supporting.js';
 export * from './server/RESTServer.js';

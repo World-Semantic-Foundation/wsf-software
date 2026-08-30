@@ -513,6 +513,107 @@ export interface EntityState {
 }
 
 // ============================================================================
+// Section 16 : Supporting Semantics (Tier 2, per ADR-WSF-20/21/15/22)
+// ============================================================================
+
+/**
+ * A term (per wsf:Term concept).
+ *
+ * Terms are designations for concepts: the human vocabulary through
+ * which concepts are referenced. Each concept has at most one preferred
+ * term per language; admitted terms are accepted synonyms; deprecated
+ * terms are retained for historical resolution.
+ */
+export interface Term {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** The designation text (e.g. 'Digital Twin'). */
+  designation: string;
+  /** BCP-47 language tag (e.g. 'en'). Default 'en'. */
+  language?: string;
+  /** Designation kind. */
+  kind: 'preferred' | 'admitted' | 'deprecated';
+  /** Concept this term designates. */
+  concept: CURIE;
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+  /** Created timestamp (ISO 8601). */
+  created_at: string;
+}
+
+/**
+ * A definition (per wsf:Definition concept, ADR-WSF-20).
+ *
+ * Definitions state what a concept means. Intensional definitions give
+ * genus + differentia; extensional definitions enumerate members;
+ * ostensive definitions point at examples.
+ */
+export interface Definition {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Concept being defined. */
+  concept: CURIE;
+  /** Definition text. */
+  text: string;
+  /** Definition kind. */
+  kind: 'intensional' | 'extensional' | 'ostensive';
+  /** Source citation (IRI) if the definition is derived. */
+  source?: IRI;
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+  /** Created timestamp (ISO 8601). */
+  created_at: string;
+}
+
+/**
+ * An external reference (per wsf:Reference concept, ADR-WSF-21).
+ *
+ * References map internal concepts to external identifiers in other
+ * systems, using SKOS-style mapping kinds.
+ */
+export interface ExternalReference {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Internal concept (subject of the mapping). */
+  concept: CURIE;
+  /** External identifier (IRI). */
+  external_iri: IRI;
+  /** Origin system or namespace (e.g. 'schema.org', 'skos', 'opendea'). */
+  system: string;
+  /** Mapping kind (SKOS semantics). */
+  kind: 'exact' | 'close' | 'broad' | 'narrow';
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+  /** Created timestamp (ISO 8601). */
+  created_at: string;
+}
+
+/**
+ * An authority record (per wsf:Authority concept, ADR-WSF-15).
+ *
+ * Authorities own namespaces, govern concepts, and delegate
+ * decision rights. Delegation chains resolve transitively.
+ */
+export interface AuthorityRecord {
+  /** Stable identifier (CURIE). */
+  semantic_id: CURIE;
+  /** Authority name. */
+  name: string;
+  /** Authority kind. */
+  kind: 'organisation' | 'role' | 'person' | 'system';
+  /** Semantic status per SEMANTIC-STATUS-MODEL. */
+  status: SemanticStatus;
+  /** Delegation target: the authority this one defers to. */
+  delegates_to?: CURIE;
+  /** Namespace prefixes this authority owns. */
+  namespaces?: string[];
+  /** Provenance (per ADR-WSF-22). */
+  provenance: Provenance;
+  /** Registration timestamp (ISO 8601). */
+  registered_at: string;
+}
+
+// ============================================================================
 // Section 14 : Audit Trail (Tier 2, per ADR-WSF-22)
 // ============================================================================
 
