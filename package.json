@@ -31,7 +31,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "tsc -p tsconfig.tests.json && node --test dist-tests/tests/",
+    "test": "tsc -p tsconfig.tests.json && node --test dist-tests/tests/*.test.js",
     "lint": "tsc --noEmit"
   },
   "keywords": [

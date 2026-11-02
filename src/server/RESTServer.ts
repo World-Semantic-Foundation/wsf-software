@@ -41,6 +41,15 @@ export class RESTServer {
     this.config = config;
   }
 
+  /** The actual bound port; resolves the assigned port when configured with port 0. */
+  get bound_port(): number | null {
+    const address = this.server?.address();
+    if (address && typeof address === 'object' && 'port' in address) {
+      return address.port;
+    }
+    return null;
+  }
+
   async start(): Promise<void> {
     const prefix = this.config.prefix ?? '';
     const engine = this.engine;

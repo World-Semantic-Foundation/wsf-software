@@ -29,13 +29,24 @@ describe('RESTServer', () => {
   });
 
   test('responds to GET /v1/health', async () => {
-    const response = await fetch('http://127.0.0.1:8080/v1/health');
-    // Note: port 0 picks a random port; for tests use the assigned port
-    // This test will only work if port is fixed; skipping for now
+    const port = server.bound_port;
+    if (port === null) {
+      throw new Error('server did not bind a port');
+    }
+    const response = await fetch(`http://127.0.0.1:${port}/v1/health`);
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as { success?: boolean; data?: { status?: string } };
+    assert.equal(body.success, true);
+    assert.equal(body.data?.status, 'healthy');
   });
 
   test('rejects unknown routes with 404', async () => {
-    // Same caveat as above
+    const port = server.bound_port;
+    if (port === null) {
+      throw new Error('server did not bind a port');
+    }
+    const response = await fetch(`http://127.0.0.1:${port}/v1/unknown-route`);
+    assert.equal(response.status, 404);
   });
 });
 
